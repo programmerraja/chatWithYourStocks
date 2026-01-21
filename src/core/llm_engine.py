@@ -29,10 +29,7 @@ class LLMEngine:
 
         if history:
             for msg in history:
-                role = msg["role"]
-                if role == "model":  # Handle legacy role name if any
-                    role = "assistant"
-                messages.append({"role": role, "content": msg["content"]})
+                messages.append({"role": msg["role"], "content": msg["content"]})
 
         messages.append({"role": "user", "content": user_query})
         return messages
@@ -63,11 +60,8 @@ class LLMEngine:
 
                 response_message = response.choices[0].message
 
-                # Check if the model wants to call a tool
                 if response_message.tool_calls:
-                    current_messages.append(
-                        response_message
-                    )  # append the assistant's message with tool_calls
+                    current_messages.append(response_message)
 
                     for tool_call in response_message.tool_calls:
                         function_name = tool_call.function.name
@@ -102,7 +96,6 @@ class LLMEngine:
                         )
                     continue
 
-                # If no tool calls, return the answer
                 return {
                     "answer": response_message.content,
                     "success": True,

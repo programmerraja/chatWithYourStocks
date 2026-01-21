@@ -32,13 +32,17 @@ graph TD
     subgraph Core Logic
         Engine -->|Context + Tools| OpenAI[OpenAI]
         OpenAI -->|Function Call| Engine
-        Engine -->|Executes Tool| Tool[MongoDB Tool]
-        Tool -->|Validates| Validator[Query Validator]
+
+        Engine -->|Executes| DBTool[MongoDB Tool]
+        Engine -->|Executes| CalcTool[Calculator Tool]
+
+        DBTool -->|Validates| Validator[Query Validator]
         Validator -->|Safe Query| DB[(MongoDB)]
     end
 
-    DB -->|Results| Tool
-    Tool -->|Data| Engine
+    DB -->|Results| DBTool
+    DBTool -->|Data| Engine
+    CalcTool -->|Result| Engine
     Engine -->|Formatted Answer| UI
 ```
 
@@ -46,10 +50,10 @@ graph TD
 
 1.  **User Input**: The user asks a question via the Streamlit interface.
 2.  **LLM Processing**: The request is sent to the `LLMEngine`, which forwards it to Google Gemini along with a schema of available tools.
-3.  **Tool Selection**: If Gemini decides it needs data, it issues a `function_call` for `execute_mongodb_query`.
-4.  **Validation**: The `mongodb_tool` receives the query parameters and passes them to the `QueryValidator` to check for safety (e.g., no `drop`, `insert`, or injection attacks).
-5.  **Execution**: Validated queries are executed against the MongoDB database.
-6.  **Response**: Data is returned to Gemini, which interprets the results and generates a natural language answer for the user.
+3.  **Tool Selection**: If Gemini decides it needs data, it issues a `function_call` for `execute_mongodb_query`. If it needs to perform a calculation, it uses `execute_calculator`.
+4.  **Validation**: For database queries, the `mongodb_tool` receives the query parameters and passes them to the `QueryValidator` to check for safety (e.g., no `drop`, `insert`, or injection attacks).
+5.  **Execution**: Validated queries are executed against the MongoDB database. Mathematical expressions are safely evaluated.
+6.  **Response**: Data or calculation results are returned to Gemini, which interprets the results and generates a natural language answer for the user.
 
 ## 📂 Project Structure
 
@@ -62,7 +66,8 @@ graph TD
 │   │   ├── chat_model.py       # Pydantic models for chat history
 │   │   └── config.py           # Application configuration
 │   ├── tools/
-│   │   └── mongodb_tool.py     # Tool definition for LLM data access
+│   │   ├── mongodb_tool.py     # Tool definition for LLM data access
+│   │   └── calculator_tool.py  # Tool definition for Safe Math calculation
 │   ├── ui/
 │   │   └── app.py              # Main Streamlit application
 │   └── prompts/
