@@ -232,24 +232,24 @@ def process_user_query(
 
 
 with st.sidebar:
-    st.title("📈 Stock Trading Agent")
+    st.title("Stock Trading Agent")
     st.markdown("---")
 
     try:
         st.session_state.db.client.server_info()
         st.markdown(
-            '<div class="success-box">🟢 Database Connected</div>',
+            '<div class="success-box">Database Connected</div>',
             unsafe_allow_html=True,
         )
     except:
         st.markdown(
-            '<div class="error-box">🔴 Database Disconnected</div>',
+            '<div class="error-box"> Database Disconnected</div>',
             unsafe_allow_html=True,
         )
 
     st.markdown("---")
 
-    if st.button("➕ New Chat", use_container_width=True):
+    if st.button("New Chat", use_container_width=True):
         chat_id = create_new_chat()
         if chat_id:
             st.session_state.current_chat_id = chat_id
@@ -259,7 +259,7 @@ with st.sidebar:
 
     st.markdown("---")
 
-    st.subheader("💬 Chat History")
+    st.subheader(" Chat History")
     chats = list_all_chats()
 
     if chats:
@@ -280,7 +280,7 @@ with st.sidebar:
                         st.session_state.messages = history["messages"]
                         st.rerun()
             with col2:
-                if st.button("🗑️", key=f"delete_{chat['id']}"):
+                if st.button("X", key=f"delete_{chat['id']}"):
                     if delete_chat(chat["id"]):
                         if st.session_state.current_chat_id == chat["id"]:
                             st.session_state.current_chat_id = None
@@ -292,14 +292,13 @@ with st.sidebar:
 
     st.markdown("---")
 
-    st.subheader("💡 Example Queries")
+    st.subheader("Example Queries")
     examples = [
         "How many active holdings do we have?",
         "Show me the top 10 holdings by market value",
         "What's the total YTD P&L across all portfolios?",
         "List recent trades from the last week",
         "What types of securities do we hold?",
-        "Show me the distribution of long vs short positions",
         "Which portfolios have the best MTD performance?",
         "Count the number of trades by type",
     ]
