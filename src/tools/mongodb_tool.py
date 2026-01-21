@@ -10,43 +10,47 @@ from src.core.query_validator import query_validator
 
 logger = logging.getLogger(__name__)
 
-# Schema dictionary kept for reference or backup, but AFC will infer from function
 MONGODB_TOOL_SCHEMA = {
-    "type": "object",
-    "properties": {
-        "collection": {
-            "type": "string",
-            "description": "Collection name: 'holdings' or 'trades'",
-        },
-        "operation": {
-            "type": "string",
-            "enum": ["find", "aggregate", "countDocuments", "distinct"],
-            "description": "MongoDB operation type",
-        },
-        "query": {
-            "type": "array",
-            "description": "for find/count/distinct: query filter object inside array; for aggregate: aggregation pipeline stages",
-            "items": {"type": "object"},
-        },
-        "options": {
+    "type": "function",
+    "function": {
+        "name": "execute_mongodb_query",
+        "description": "Execute MongoDB queries (find, aggregate, countDocuments, distinct)",
+        "parameters": {
             "type": "object",
-            "nullable": True,
-            "description": "Query options (sort, limit, skip, projection)",
-        },
-        "field": {
-            "type": "string",
-            "nullable": True,
-            "description": "Field for distinct operation",
+            "properties": {
+                "collection": {
+                    "type": "string",
+                    "description": "Collection name: 'holdings' or 'trades'",
+                },
+                "operation": {
+                    "type": "string",
+                    "enum": ["find", "aggregate", "countDocuments", "distinct"],
+                    "description": "MongoDB operation type",
+                },
+                "query": {
+                    "type": "array",
+                    "description": "always wrap query in array even for find/count/distinct and aggregate",
+                    "items": {"type": "object"},
+                },
+                "options": {
+                    "type": ["object", "null"],
+                    "description": "Query options (sort, limit, skip, projection)",
+                },
+                "field": {
+                    "type": ["string", "null"],
+                    "description": "Field for distinct operation",
+                },
+            },
+            "required": ["collection", "operation", "query"],
         },
     },
-    "required": ["collection", "operation", "query"],
 }
 
 
 def execute_mongodb_query(
     collection: str,
     operation: str,
-    query: Dict,
+    query: Dict = {},
     options: Optional[Dict[str, Any]] = None,
     field: Optional[str] = None,
 ) -> str:

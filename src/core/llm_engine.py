@@ -1,13 +1,13 @@
-"""LLM Engine using Google GenAI SDK with Automatic Function Calling."""
+"""LLM Engine using OpenAI SDK with Automatic Function Calling."""
 
 import logging
 from typing import List, Dict, Any, Optional
 import json
-from google import genai
-from google.genai import types
+from openai import OpenAI
 from src.core.config import settings
 from src.prompts.system_prompt import get_system_prompt
 from src.tools.mongodb_tool import execute_mongodb_query, MONGODB_TOOL_SCHEMA
+from src.tools.calculator_tool import execute_calculator, CALCULATOR_TOOL_SCHEMA
 
 logger = logging.getLogger(__name__)
 
@@ -20,119 +20,94 @@ class LLMEngine:
         self.max_tokens = settings.llm_max_tokens
         self.system_prompt = get_system_prompt()
 
-        self.client = genai.Client(api_key=settings.google_api_key)
+        self.client = OpenAI(api_key=settings.openai_api_key)
 
-    def _format_contents(
+    def _format_messages(
         self, user_query: str, history: Optional[List[Dict[str, str]]] = None
-    ) -> List[types.Content]:
-        contents = []
+    ) -> List[Dict[str, str]]:
+        messages = [{"role": "system", "content": self.system_prompt}]
 
         if history:
             for msg in history:
                 role = msg["role"]
-                if role == "assistant":
-                    role = "model"
+                if role == "model":  # Handle legacy role name if any
+                    role = "assistant"
+                messages.append({"role": role, "content": msg["content"]})
 
-                contents.append(
-                    types.Content(
-                        role=role, parts=[types.Part.from_text(text=msg["content"])]
-                    )
-                )
-
-        contents.append(
-            types.Content(role="user", parts=[types.Part.from_text(text=user_query)])
-        )
-
-        return contents
+        messages.append({"role": "user", "content": user_query})
+        return messages
 
     def process_query(
         self, user_query: str, history: Optional[List[Dict[str, str]]] = None
     ) -> Dict[str, Any]:
 
         try:
-            current_history = self._format_contents(user_query, history)
+            current_messages = self._format_messages(user_query, history)
 
             logger.info(f"Processing query: {user_query[:100]}...")
 
-            mongodb_function = types.FunctionDeclaration(
-                name="execute_mongodb_query",
-                description="Execute MongoDB queries (find, aggregate, countDocuments, distinct)",
-                parameters_json_schema=MONGODB_TOOL_SCHEMA,
-            )
+            tools = [MONGODB_TOOL_SCHEMA, CALCULATOR_TOOL_SCHEMA]
 
-            tool = types.Tool(function_declarations=[mongodb_function])
-
-            config = types.GenerateContentConfig(
-                system_instruction=self.system_prompt,
-                tools=[tool],
-                temperature=0.1,
-                max_output_tokens=self.max_tokens,
-                automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                    disable=True,
-                ),
-            )
-
+            queries_used = []
             max_turns = 5
             for turn in range(max_turns):
                 logger.info(f"LLM Loop Turn: {turn + 1}")
 
-                response = self.client.models.generate_content(
-                    model=self.model, contents=current_history, config=config
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=current_messages,
+                    tools=tools,
+                    temperature=self.temperature,
+                    max_tokens=self.max_tokens,
                 )
 
-                function_call = None
-                if (
-                    response.candidates
-                    and response.candidates[0].content
-                    and response.candidates[0].content.parts
-                ):
-                    for part in response.candidates[0].content.parts:
-                        if part.function_call:
-                            function_call = part.function_call
-                            break
+                response_message = response.choices[0].message
 
-                if function_call:
-                    logger.info(
-                        f"LLM requested tool: {function_call.name} with args: {function_call.args}"
-                    )
+                # Check if the model wants to call a tool
+                if response_message.tool_calls:
+                    current_messages.append(
+                        response_message
+                    )  # append the assistant's message with tool_calls
 
-                    current_history.append(response.candidates[0].content)
+                    for tool_call in response_message.tool_calls:
+                        function_name = tool_call.function.name
+                        function_args = json.loads(tool_call.function.arguments)
 
-                    tool_result_json = "{}"
-                    if function_call.name == "execute_mongodb_query":
-                        args = function_call.args
-                        if hasattr(args, "to_dict"):
-                            args = args.to_dict()
-                        elif not isinstance(args, dict):
-                            try:
-                                args = dict(args)
-                            except Exception:
-                                args = {}
-
-                        tool_result_json = execute_mongodb_query(**args)
-                    else:
-                        tool_result_json = json.dumps(
-                            {
-                                "success": False,
-                                "error": f"Unknown tool {function_call.name}",
-                            }
+                        logger.info(
+                            f"LLM requested tool: {function_name} with args: {function_args}"
                         )
 
-                    response_part = types.Part.from_function_response(
-                        name=function_call.name, response=json.loads(tool_result_json)
-                    )
+                        tool_result_json = "{}"
+                        if function_name == "execute_mongodb_query":
+                            formatted_query = json.dumps(function_args, indent=2)
+                            queries_used.append(formatted_query)
+                            tool_result_json = execute_mongodb_query(**function_args)
+                        elif function_name == "execute_calculator":
+                            tool_result_json = execute_calculator(**function_args)
+                        else:
+                            tool_result_json = json.dumps(
+                                {
+                                    "success": False,
+                                    "error": f"Unknown tool {function_name}",
+                                }
+                            )
 
-                    current_history.append(
-                        types.Content(role="tool", parts=[response_part])
-                    )
-
+                        current_messages.append(
+                            {
+                                "tool_call_id": tool_call.id,
+                                "role": "tool",
+                                "name": function_name,
+                                "content": tool_result_json,
+                            }
+                        )
                     continue
 
+                # If no tool calls, return the answer
                 return {
-                    "answer": response.text,
+                    "answer": response_message.content,
                     "success": True,
                     "data": None,
-                    "query_used": "Handled internally",
+                    "query_used": queries_used if queries_used else None,
                 }
 
             return {

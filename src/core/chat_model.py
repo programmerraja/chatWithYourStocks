@@ -9,7 +9,7 @@ class Message(BaseModel):
     role: str
     content: Optional[str] = None
     timestamp: datetime = Field(default_factory=datetime.utcnow)
-    query_used: Optional[str] = None
+    query_used: Optional[Any] = None
     data: Optional[List[Dict[str, Any]]] = None
 
 
@@ -30,7 +30,7 @@ class ChatSession(BaseModel):
         self,
         role: str,
         content: str,
-        query_used: Optional[str] = None,
+        query_used: Optional[Any] = None,
         data: Optional[List[Dict[str, Any]]] = None,
     ):
         message = Message(role=role, content=content, query_used=query_used, data=data)

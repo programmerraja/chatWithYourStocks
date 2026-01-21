@@ -1,5 +1,5 @@
 # LLM & AI
-# google-genai is specified in pyproject.toml
+openai>=1.0.0
 
 # Web Framework
 streamlit>=1.31.0

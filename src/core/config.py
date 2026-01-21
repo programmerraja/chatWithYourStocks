@@ -4,7 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
 
-    google_api_key: str
+    openai_api_key: str
 
     mongodb_uri: str = "mongodb://localhost:27017"
     mongodb_database: str = "stock_trading_agent"
@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     max_result_size: int = 1000
     max_query_complexity: int = 5
 
-    llm_model: str = "models/gemini-flash-latest"
+    llm_model: str = "gpt-4o-mini"
     llm_temperature: float = 0.1
     llm_max_tokens: int = 2048
 

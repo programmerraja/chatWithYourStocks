@@ -320,20 +320,23 @@ for message in st.session_state.messages:
     if not content:
         continue
 
-    if role == "user":
-        st.markdown(
-            f'<div class="user-message"><b>You:</b><br>{content}</div>',
-            unsafe_allow_html=True,
-        )
-    else:
-        st.markdown(
-            f'<div class="assistant-message"><b>Assistant:</b><br>{content}</div>',
-            unsafe_allow_html=True,
-        )
+    with st.chat_message(role):
+        st.markdown(content)
 
-        if message.get("query_used"):
-            with st.expander("🔍 View MongoDB Query"):
-                st.code(message["query_used"], language="json")
+        if role == "assistant" and message.get("query_used"):
+            queries = message["query_used"]
+            if isinstance(queries, str):
+                queries = [queries]
+
+            with st.expander(
+                f"🔍 View MongoDB Query ({len(queries)})"
+                if len(queries) > 1
+                else "🔍 View MongoDB Query"
+            ):
+                for i, query in enumerate(queries):
+                    if len(queries) > 1:
+                        st.markdown(f"**Query {i+1}**")
+                    st.code(query, language="json")
 
 
 if "example_query" in st.session_state:
