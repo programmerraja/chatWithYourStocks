@@ -128,10 +128,6 @@ def execute_mongodb_query(
 
         results_json = json.loads(json_util.dumps(results))
 
-        # Log to verifying execution is happening
-        logger.warning(f"EXECUTING MONGODB TOOL: {collection}.{operation}")
-        print(f"DEBUG: Executing MongoDB Tool: {collection}.{operation}", flush=True)
-
         logger.info(
             f"Query executed successfully: {collection}.{operation}, "
             f"returned {count} results"
@@ -148,7 +144,6 @@ def execute_mongodb_query(
             },
         }
 
-        # Return as JSON string to ensure SDK handles it correctly
         return json.dumps(response_dict)
 
     except ValueError as e:
