@@ -1,8 +1,8 @@
-# Stock Trading Agent 📈
+# Stock Trading Agent 
 
 A powerful, conversational AI agent designed to help you analyze your stock holdings and trades using natural language. Built with **Google Gemini**, **MongoDB**, and **Streamlit**.
 
-## 🚀 Overview
+##  Overview
 
 The **Stock Trading Agent** allows users to interact with their financial data naturally. Instead of writing complex databse queries, you can simply ask questions like:
 
@@ -12,7 +12,7 @@ The **Stock Trading Agent** allows users to interact with their financial data n
 
 The agent intelligently translates these questions into MongoDB queries, executes them securely, and presents the results in a friendly, readable format.
 
-## ✨ Key Features
+##  Key Features
 
 - **Natural Language Interface**: Chat with your data as if you were talking to an analyst.
 - **Intelligent Query Generation**: Uses Google's Gemini models to understand intent and generate accurate MongoDB queries (Aggregation pipelines, Find, Count, Distinct).
@@ -20,7 +20,7 @@ The agent intelligently translates these questions into MongoDB queries, execute
 - **Chat History**: Persistent chat sessions stored in MongoDB so you can revisit past analyses.
 - **Interactive UI**: Clean, responsive interface built with Streamlit.
 
-## 🏗️ Architecture
+##  Architecture
 
 The application follows a modular architecture separating the UI, LLM logic, and data access layers.
 
@@ -55,7 +55,7 @@ graph TD
 5.  **Execution**: Validated queries are executed against the MongoDB database. Mathematical expressions are safely evaluated.
 6.  **Response**: Data or calculation results are returned to Gemini, which interprets the results and generates a natural language answer for the user.
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 ├── src/
@@ -76,7 +76,7 @@ graph TD
 └── requirements.txt            # Python dependencies
 ```
 
-## 🛠️ Setup & Installation
+## Setup & Installation
 
 ### Prerequisites
 
