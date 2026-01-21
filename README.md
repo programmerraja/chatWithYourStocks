@@ -30,8 +30,8 @@ graph TD
     UI -->|Sends Input| Engine[LLM Engine]
 
     subgraph Core Logic
-        Engine -->|Context + Tools| Gemini[Google Gemini API]
-        Gemini -->|Function Call| Engine
+        Engine -->|Context + Tools| OpenAI[OpenAI]
+        OpenAI -->|Function Call| Engine
         Engine -->|Executes Tool| Tool[MongoDB Tool]
         Tool -->|Validates| Validator[Query Validator]
         Validator -->|Safe Query| DB[(MongoDB)]
